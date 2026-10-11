@@ -222,4 +222,4 @@ select { background: var(--bg); border: 1px solid var(--line); border-radius: 4p
 .event.high .kind { background: var(--bad-soft); color: var(--bad); }
 .event.medium .kind { background: var(--warn-soft); color: var(--warn); }
 .event.info .kind { background: var(--ok-soft); color: var(--ok); }
-.event .kind:is(.violation) { background: var(--sulfur-soft); color: var(--sulfur); }
+.event .kind.kind-violation { background: var(--sulfur-soft); color: var(--sulfur); }

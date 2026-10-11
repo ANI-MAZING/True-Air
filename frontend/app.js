@@ -144,7 +144,7 @@ function drawQkd(s) {
 
 function drawEvents(s) {
   $("eventList").innerHTML = s.events.length ? s.events.map((e) => `<li class="event ${esc(e.severity)}">
-    <time>${esc(e.t.slice(11, 16))}</time><span class="kind ${esc(e.kind)}">${esc(e.kind)}</span><span>${esc(e.message)}</span></li>`).join("")
+    <time>${esc(e.t.slice(11, 16))}</time><span class="kind kind-${esc(e.kind)}">${esc(e.kind)}</span><span>${esc(e.message)}</span></li>`).join("")
     : `<li class="empty">No events yet. Try the smog toggle or an attack on a QKD link.</li>`;
 }
 

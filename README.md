@@ -28,6 +28,8 @@ Any other behaviour can be switched on from the dashboard. Every non-honest beha
 
 ### Measured detection
 
+Reproduce every number below with `.venv/bin/python scripts/evaluate.py` (writes `benchmarks/detection_eval.json`). The inverse model's median error against true emissions is 9% (mean 18%).
+
 0 false alarms on honest plants across 3,360 stack-checks (6 runs x 80 ticks). Time to detection after switching a clean plant (1 tick = 15 simulated minutes):
 
 | What the operator does | Caught after | Caught by |

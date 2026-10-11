@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="482" viewBox="0 0 1000 482" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+<rect width="1000" height="482" fill="#ffffff"/>
+<text x="24" y="38" font-size="22" font-weight="600" fill="#1b2330">How fast TrueAir catches each kind of cheating</text>
+<text x="24" y="64" font-size="15" fill="#4a5563">Simulated minutes after a clean plant starts cheating (1 reading = 15 min). Light segment = spread across test runs.</text>
+<line x1="300.0" x2="300.0" y1="88" y2="418" stroke="#e3e7ec" stroke-width="1"/>
+<text x="300.0" y="440" font-size="13" fill="#6b7685" text-anchor="middle">0</text>
+<line x1="417.5" x2="417.5" y1="88" y2="418" stroke="#e3e7ec" stroke-width="1"/>
+<text x="417.5" y="440" font-size="13" fill="#6b7685" text-anchor="middle">30</text>
+<line x1="535.0" x2="535.0" y1="88" y2="418" stroke="#e3e7ec" stroke-width="1"/>
+<text x="535.0" y="440" font-size="13" fill="#6b7685" text-anchor="middle">60</text>
+<line x1="652.5" x2="652.5" y1="88" y2="418" stroke="#e3e7ec" stroke-width="1"/>
+<text x="652.5" y="440" font-size="13" fill="#6b7685" text-anchor="middle">90</text>
+<line x1="770.0" x2="770.0" y1="88" y2="418" stroke="#e3e7ec" stroke-width="1"/>
+<text x="770.0" y="440" font-size="13" fill="#6b7685" text-anchor="middle">120</text>
+<text x="535.0" y="464" font-size="13" fill="#6b7685" text-anchor="middle">minutes (simulated)</text>
+<text x="286" y="124.0" font-size="15" fill="#1b2330" text-anchor="end">Rewrites readings in transit</text>
+<rect x="300" y="108.0" width="58.75" height="22" rx="4" fill="#2f6fb0"/>
+<text x="368.75" y="124.0" font-size="14" fill="#1b2330"><tspan font-weight="600">15 min</tspan><tspan fill="#6b7685">  ·  signature</tspan></text>
+<text x="286" y="170.0" font-size="15" fill="#1b2330" text-anchor="end">Replays old signed packets</text>
+<rect x="300" y="154.0" width="58.75" height="22" rx="4" fill="#2f6fb0"/>
+<text x="368.75" y="170.0" font-size="14" fill="#1b2330"><tspan font-weight="600">15 min</tspan><tspan fill="#6b7685">  ·  counter / timestamp</tspan></text>
+<text x="286" y="216.0" font-size="15" fill="#1b2330" text-anchor="end">Runs dirty, reports honestly</text>
+<rect x="300" y="200.0" width="58.75" height="22" rx="4" fill="#2f6fb0"/>
+<text x="368.75" y="216.0" font-size="14" fill="#1b2330"><tspan font-weight="600">15 min</tspan><tspan fill="#6b7685">  ·  over-limit check</tspan></text>
+<text x="286" y="262.0" font-size="15" fill="#1b2330" text-anchor="end">Bypasses the analyser (flatline)</text>
+<rect x="300" y="246.0" width="176.25" height="22" rx="4" fill="#2f6fb0"/>
+<rect x="478.25" y="246.0" width="115.5" height="22" rx="4" fill="#a9c4e2"/>
+<text x="603.75" y="262.0" font-size="14" fill="#1b2330"><tspan font-weight="600">45–75 min</tspan><tspan fill="#6b7685">  ·  air estimate</tspan></text>
+<text x="286" y="308.0" font-size="15" fill="#1b2330" text-anchor="end">Feeds a fake value into the analyser</text>
+<rect x="300" y="292.0" width="235.0" height="22" rx="4" fill="#2f6fb0"/>
+<rect x="537.0" y="292.0" width="115.5" height="22" rx="4" fill="#a9c4e2"/>
+<text x="662.5" y="308.0" font-size="14" fill="#1b2330"><tspan font-weight="600">60–90 min</tspan><tspan fill="#6b7685">  ·  air estimate</tspan></text>
+<text x="286" y="354.0" font-size="15" fill="#1b2330" text-anchor="end">Goes offline when over the limit</text>
+<rect x="300" y="338.0" width="352.5" height="22" rx="4" fill="#2f6fb0"/>
+<text x="662.5" y="354.0" font-size="14" fill="#1b2330"><tspan font-weight="600">90 min</tspan><tspan fill="#6b7685">  ·  missing data</tspan></text>
+<text x="286" y="400.0" font-size="15" fill="#1b2330" text-anchor="end">Caps readings under the limit</text>
+<rect x="300" y="384.0" width="411.25" height="22" rx="4" fill="#2f6fb0"/>
+<text x="721.25" y="400.0" font-size="14" fill="#1b2330"><tspan font-weight="600">105 min</tspan><tspan fill="#6b7685">  ·  capping + air estimate</tspan></text>
+<line x1="300" x2="300" y1="88" y2="418" stroke="#6b7685" stroke-width="1"/>
+</svg>
