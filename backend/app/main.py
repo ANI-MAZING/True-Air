@@ -40,6 +40,12 @@ class Behaviour(BaseModel):
     behaviour: str
 
 
+class Injection(BaseModel):
+    so2: float
+    method: str = "transit"   # transit | analyser
+    ticks: int = 8
+
+
 class Toggle(BaseModel):
     on: bool
 
@@ -76,6 +82,17 @@ def set_behaviour(stack_id: str, body: Behaviour):
     try:
         eng().set_behaviour(stack_id, body.behaviour)
     except KeyError as e:
+        raise HTTPException(400, f"unknown {e}")
+    return {"ok": True}
+
+
+@app.post("/api/control/stacks/{stack_id}/inject")
+def inject(stack_id: str, body: Injection):
+    if not 0 <= body.so2 <= 5000 or not 1 <= body.ticks <= 48:
+        raise HTTPException(400, "so2 must be 0-5000 kg/h and ticks 1-48")
+    try:
+        eng().inject_reading(stack_id, body.so2, body.method, body.ticks)
+    except (KeyError, StopIteration) as e:
         raise HTTPException(400, f"unknown {e}")
     return {"ok": True}
 

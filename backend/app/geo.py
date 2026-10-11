@@ -17,11 +17,11 @@ class Stack:
     base_nox: float
     base_pm: float
     behaviour: str = "honest"  # see sensors.BEHAVIOURS
-    so2_limit: float = 0.0   # consent limit, kg/h; defaults to 1.25 x base_so2
+    so2_limit: float = 0.0   # consent limit, kg/h; defaults to 1.5 x base_so2 (compliant at full load)
 
     def __post_init__(self):
         if not self.so2_limit:
-            self.so2_limit = 1.25 * self.base_so2
+            self.so2_limit = 1.5 * self.base_so2
 
 
 @dataclass
@@ -42,14 +42,14 @@ class School:
 
 
 STACKS = [
-    Stack("OKH-01", "Okhla Thermal Unit", 28.530, 77.285, 140, 95, 40, "clip_at_limit", 110),
+    Stack("OKH-01", "Okhla Thermal Unit", 28.530, 77.285, 140, 95, 40, "clip_at_limit"),
     Stack("WZP-02", "Wazirpur Steel Pickling", 28.700, 77.165, 60, 40, 30, "honest"),
-    Stack("NRL-03", "Narela Plastics Moulding", 28.850, 77.095, 35, 30, 55, "flatline"),
+    Stack("NRL-03", "Narela Plastics Moulding", 28.850, 77.095, 35, 30, 55, "honest"),
     Stack("BWN-04", "Bawana Rubber Works", 28.800, 77.040, 50, 35, 45, "honest"),
-    Stack("MYP-05", "Mayapuri Metal Recovery", 28.635, 77.125, 45, 28, 60, "replay"),
-    Stack("SBD-06", "Sahibabad Dyeing Cluster", 28.680, 77.345, 80, 50, 35, "mitm_edit"),
-    Stack("FBD-07", "Faridabad Forging Plant", 28.400, 77.310, 90, 70, 50, "dark_on_bad_days"),
-    Stack("MDK-08", "Mundka Brick Kiln Row", 28.680, 77.030, 70, 45, 80, "honest", 55),
+    Stack("MYP-05", "Mayapuri Metal Recovery", 28.635, 77.125, 45, 28, 60, "honest"),
+    Stack("SBD-06", "Sahibabad Dyeing Cluster", 28.680, 77.345, 80, 50, 35, "honest"),
+    Stack("FBD-07", "Faridabad Forging Plant", 28.400, 77.310, 90, 70, 50, "honest"),
+    Stack("MDK-08", "Mundka Brick Kiln Row", 28.680, 77.030, 70, 45, 80, "honest"),
 ]
 
 STATIONS = [

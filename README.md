@@ -20,18 +20,28 @@ Pollution control boards decide alerts, school advisories and penalties from dat
 | **School advisories** | AQI at each school (IDW of nearest stations), CPCB/GRAP-aligned actions, and the largest upwind industrial source, with a warning when that source's data isn't trusted. Pushed via SNS when a school's level rises. |
 | **Quantum-secure backbone** | BB84 QKD sessions on the regulator links (CPCB ↔ state boards), classified each tick into normal or one of 7 attacks. On attack, keys are discarded and the link falls back to hybrid post-quantum TLS. |
 
-### Measured detection (10 seeds × 80 ticks, after warm-up)
+### Default scenario
 
-| Operator behaviour | Misclassified |
-|---|---|
-| Honest (false positives) | 1.3 % |
-| Clip at limit | 0 % |
-| Flatline | 0 % |
-| Replay | 0 % |
-| Edit after signing | 0 % |
-| Dark on bad days | 15.2 % (it reports honestly when emissions are low, and trust slowly recovers) |
+Seven of the eight plants run clean and report honestly; their emissions stay under their consent limits and the city AQI sits in the Good/Satisfactory range (51-79 across test runs), so schools get no alerts. One plant (OKH-01) runs with its scrubber off and caps its reported SO₂ just under the limit; TrueAir flags it as compromised and over limit.
 
-Honest plants that genuinely exceed their limit (MDK-08) stay **trusted + over limit**. Clean data about real pollution is a different finding from dishonest data.
+Any other behaviour can be switched on from the dashboard. Every non-honest behaviour also means the plant runs dirty (scrubber bypassed, 1.9x emissions), which is the reason operators cheat.
+
+### Measured detection
+
+0 false alarms on honest plants across 3,360 stack-checks (6 runs x 80 ticks). Time to detection after switching a clean plant (1 tick = 15 simulated minutes):
+
+| What the operator does | Caught after | Caught by |
+|---|---|---|
+| Rewrites readings in transit | 1 tick | Signature check |
+| Replays old signed packets | 1 tick | Counter / timestamp check |
+| Scrubber off, reports honestly | 1 tick | Over limit (data still trusted) |
+| Bypasses the analyser (flatline) | 3-5 ticks | Reported value doesn't match the air |
+| Goes offline when over the limit | 6 ticks | Missing data |
+| Caps readings under the limit | 7 ticks | Readings pile up under the limit; air shows more |
+| Sends a false reading in transit | 1 tick | Signature check |
+| Feeds a false low/high value into the analyser | 4-6 ticks | Doesn't match stations + satellite |
+
+A plant that is honest but over its limit stays **trusted + over limit**. Clean data about real pollution is a different finding from dishonest data.
 
 ## Where quantum fits, and where it doesn't
 
@@ -58,7 +68,7 @@ uv pip install --python .venv -r requirements.txt -r requirements-dev.txt
 Open http://localhost:8000. Demo script:
 1. Click **OKH-01** in the ledger. Its reported SO₂ sits flat under the limit while the inferred line runs well above it.
 2. Toggle **Show ground truth** to show the judges the inferred line tracks reality.
-3. Switch an honest stack (e.g. WZP-02) to `mitm_edit` and watch it go red within a couple of ticks.
+3. Pick an honest stack (e.g. SBD-06), type a false reading such as `5` into **Send a false SO₂ reading** and send it. In transit, it's caught on the next tick; fed into the analyser, it's caught within a few ticks because the air disagrees. Or switch its behaviour to `mitm_edit`, `flatline`, etc.
 4. Turn on **Smog episode**. School advisories escalate, and the event log shows the SNS alerts.
 5. Set a QKD link to **Intercept-resend**. QBER jumps past 11 %, the attack is classified and the link falls back to PQ-TLS.
 

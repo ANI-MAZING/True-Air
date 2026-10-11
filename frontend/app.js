@@ -144,7 +144,7 @@ function drawQkd(s) {
 
 function drawEvents(s) {
   $("eventList").innerHTML = s.events.length ? s.events.map((e) => `<li class="event ${esc(e.severity)}">
-    <time>${esc(e.t.slice(11, 16))}</time><span class="kind">${esc(e.kind)}</span><span>${esc(e.message)}</span></li>`).join("")
+    <time>${esc(e.t.slice(11, 16))}</time><span class="kind ${esc(e.kind)}">${esc(e.kind)}</span><span>${esc(e.message)}</span></li>`).join("")
     : `<li class="empty">No events yet. Try the smog toggle or an attack on a QKD link.</li>`;
 }
 
@@ -190,8 +190,11 @@ async function drawDetail() {
   const hist = await fetch(`/api/stacks/${encodeURIComponent(selected)}/history`).then((r) => r.json());
   $("detailH").textContent = `${k.id} · ${k.name}`;
   const behaviours = meta ? Object.entries(meta.behaviours) : [];
-  const focused = document.activeElement?.id === "behaviourSel";
-  if (focused) return; // don't rebuild the select while someone is using it
+  // don't rebuild the controls while someone is using them
+  if (document.activeElement && $("detailBody").contains(document.activeElement) &&
+      /^(SELECT|INPUT|BUTTON)$/.test(document.activeElement.tagName)) return;
+  const injVal = $("injVal")?.value ?? "5";
+  const injMethod = $("injMethod")?.value ?? "transit";
   $("detailBody").innerHTML = `
     <div><div class="chartWrap">${chartSvg(hist, k.so2_limit)}</div>
       <div class="chartKey"><span><i style="border-color:var(--ink)"></i>Reported (verified packets only)</span>
@@ -208,6 +211,18 @@ async function drawDetail() {
       ${k.reasons.length ? `<ul class="reasons">${k.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}</ul>` : `<p class="empty">No integrity issues in the last 4 hours.</p>`}
       <div class="field"><label for="behaviourSel">Operator behaviour (simulation control)</label>
         <select id="behaviourSel">${behaviours.map(([b, d]) => `<option value="${esc(b)}"${b === k.behaviour ? " selected" : ""}>${esc(b)}: ${esc(d)}</option>`).join("")}</select></div>
+      <form class="field inject" id="injectForm">
+        <label for="injVal">Send a false SO₂ reading (kg/h)</label>
+        <div class="injRow">
+          <input id="injVal" type="number" min="0" max="5000" step="1" value="${esc(injVal)}" inputmode="decimal">
+          <button type="submit" class="send">Send</button>
+        </div>
+        <select id="injMethod" aria-label="How the false reading is injected">
+          <option value="transit"${injMethod === "transit" ? " selected" : ""}>Rewrite it in transit (after the chip signs)</option>
+          <option value="analyser"${injMethod === "analyser" ? " selected" : ""}>Feed it into the analyser (chip signs it)</option>
+        </select>
+        <span class="hint">Held for ${meta?.inject_ticks ?? 8} readings (2 simulated hours). Normal for this stack: about ${k.inferred_so2 ?? k.reported_so2 ?? "–"} kg/h, limit ${k.so2_limit} kg/h.</span>
+      </form>
     </div>`;
 }
 
@@ -247,10 +262,20 @@ document.addEventListener("keydown", (e) => {
   const row = e.target.closest?.(".stackRow");
   if (row && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); select(row.dataset.id); }
 });
+document.addEventListener("submit", async (e) => {
+  if (e.target.id !== "injectForm") return;
+  e.preventDefault();
+  const so2 = Number($("injVal").value);
+  if (!Number.isFinite(so2) || so2 < 0 || so2 > 5000) { $("injVal").focus(); return; }
+  await post(`/api/control/stacks/${encodeURIComponent(selected)}/inject`, { so2, method: $("injMethod").value });
+  document.activeElement?.blur(); refresh();
+});
 document.addEventListener("change", async (e) => {
   if (e.target.id === "behaviourSel") {
     await post(`/api/control/stacks/${encodeURIComponent(selected)}`, { behaviour: e.target.value });
     e.target.blur(); refresh();
+  } else if (e.target.id === "injMethod" || e.target.id === "injVal") {
+    // form values are read on submit
   } else if (e.target.dataset.link) {
     await post(`/api/control/qkd/${encodeURIComponent(e.target.dataset.link)}`, { scenario: e.target.value });
     e.target.blur(); refresh();

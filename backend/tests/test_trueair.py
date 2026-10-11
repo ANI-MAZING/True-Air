@@ -48,9 +48,35 @@ def test_every_cheater_is_flagged_and_honest_plants_are_not(engine):
             assert s["status"] in ("suspect", "compromised"), s
 
 
-def test_honest_violator_is_trusted_but_over_limit(engine):
-    mdk = next(s for s in engine.snapshot["stacks"] if s["id"] == "MDK-08")
+def test_default_city_is_clean(engine):
+    assert engine.snapshot["city"]["aqi"] <= 100
+    assert all(sc["level"] <= 1 for sc in engine.snapshot["schools"])
+    honest = [s for s in engine.snapshot["stacks"] if s["behaviour"] == "honest"]
+    assert len(honest) == 7 and not any(s["exceeding_limit"] for s in honest)
+
+
+def test_honest_violator_is_trusted_but_over_limit():
+    e = Engine(seed=3)
+    for _ in range(12):
+        e.tick()
+    e.set_behaviour("MDK-08", "over_limit_honest")
+    for _ in range(3):
+        e.tick()
+    mdk = next(s for s in e.snapshot["stacks"] if s["id"] == "MDK-08")
     assert mdk["status"] == "trusted" and mdk["exceeding_limit"]
+
+
+@pytest.mark.parametrize("method,value", [("transit", 5), ("analyser", 5), ("analyser", 300)])
+def test_false_reading_is_detected(method, value):
+    e = Engine(seed=1)
+    for _ in range(16):
+        e.tick()
+    e.inject_reading("SBD-06", value, method, 8)
+    statuses = []
+    for _ in range(10):
+        e.tick()
+        statuses.append(next(s for s in e.snapshot["stacks"] if s["id"] == "SBD-06")["status"])
+    assert any(st != "trusted" for st in statuses)
 
 
 def test_inverse_model_recovers_true_emissions(engine):

@@ -13,13 +13,17 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.exceptions import InvalidSignature
 
 BEHAVIOURS = {
-    "honest": "Reports what the analyser measures",
+    "honest": "Runs clean and reports what the analyser measures",
+    "over_limit_honest": "Scrubber off, but reports the true (illegal) emissions",
     "clip_at_limit": "Caps reported SO2 just under the consent limit",
     "flatline": "Analyser bypassed; DAHS sends a constant clean value",
     "replay": "Re-sends signed packets recorded on a clean day",
     "mitm_edit": "Gateway scales values down after the secure element signs them",
-    "dark_on_bad_days": "Uplink goes 'offline' whenever true emissions are high",
+    "dark_on_bad_days": "Uplink goes 'offline' whenever true emissions are over the limit",
 }
+# Every behaviour except "honest" means the plant is running dirty (scrubber
+# bypassed to save cost); the cheating behaviours exist to hide that.
+DIRTY_FACTOR = 1.9
 
 
 def canonical(payload):
@@ -52,8 +56,14 @@ class MonitoringUnit:
         self.behaviour = stack.behaviour
         self.rng = rng
         self.se = SecureElement()
-        self.recorded = deque(maxlen=96)   # clean-day packets kept for replay
+        self.recorded = deque(maxlen=24)   # clean-day packets kept for replay
         self.replay_idx = 0
+        self.injection = None              # manual false reading from the demo console
+
+    def inject(self, so2, method, ticks):
+        """method: 'analyser' (fake value fed in before signing) or
+        'transit' (value rewritten after signing)."""
+        self.injection = {"so2": float(so2), "method": method, "left": int(ticks)}
 
     def measure(self, true_vals, ts):
         """Analyser reading with ~3 % instrument noise."""
@@ -79,13 +89,24 @@ class MonitoringUnit:
             if reading["so2"] > cap:
                 reading["so2"] = round(cap * self.rng.uniform(0.9, 1.0), 2)
 
+        inj = self.injection
+        if inj and inj["method"] == "analyser":
+            reading["so2"] = round(inj["so2"] * self.rng.gauss(1.0, 0.01), 2)
+
         body, sig = self.se.sign(reading)
 
+        if inj:
+            if inj["method"] == "transit":
+                body = dict(body, so2=round(inj["so2"], 2))
+            inj["left"] -= 1
+            if inj["left"] <= 0:
+                self.injection = None
+
+        if b == "honest":
+            self.recorded.append((body, sig))   # the operator keeps a clean-day archive
         if b == "replay":
-            if len(self.recorded) < 24:
-                # Warm-up: record low-load packets to replay later.
-                if true_vals["load"] < 0.7 or not self.recorded:
-                    self.recorded.append((body, sig))
+            if not self.recorded:
+                self.recorded.append((body, sig))
             if self.recorded:
                 old_body, old_sig = self.recorded[self.replay_idx % len(self.recorded)]
                 self.replay_idx += 1
@@ -94,6 +115,6 @@ class MonitoringUnit:
                 return dict(body=old_body, sig=old_sig)
         if b == "mitm_edit":
             body = dict(body, so2=round(body["so2"] * 0.45, 2), nox=round(body["nox"] * 0.5, 2))
-        if b == "dark_on_bad_days" and true_vals["so2"] > 0.85 * self.stack.base_so2:
+        if b == "dark_on_bad_days" and true_vals["so2"] > self.stack.so2_limit:
             return None
         return dict(body=body, sig=sig)

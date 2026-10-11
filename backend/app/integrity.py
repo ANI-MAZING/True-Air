@@ -144,12 +144,19 @@ class IntegrityEngine:
                 pen += 35; reasons.append(f"Flatline: variation {cv:.2%} is below any real analyser's noise")
             if n_ok >= MIN_WINDOW and clip > 0.4:
                 pen += 30; reasons.append(f"{clip:.0%} of SO₂ readings sit just under the consent limit")
-            if L.inferred is not None and n_ok and ratio < 0.7:
+            # mismatches only count when they are large in absolute terms too;
+            # estimates for small, weakly observed stacks are noisy
+            gap_kgh = abs(ratio - 1) * L.inferred if L.inferred is not None else 0
+            material = gap_kgh > 0.2 * lim
+            if L.inferred is not None and n_ok and ratio < 0.7 and material:
                 pen += 35; reasons.append(
                     f"Reports {ratio:.0%} of what stations + satellite imply ({L.inferred:.0f} kg/h)")
             elif L.inferred is not None and n_ok and L.inferred > 1.1 * lim and ratio * L.inferred < lim:
                 pen += 30; reasons.append(
                     f"Independent estimate {L.inferred:.0f} kg/h is over the {lim:.0f} kg/h limit; reports stay under it")
+            elif L.inferred is not None and n_ok and ratio > 1.6 and material:
+                pen += 35; reasons.append(
+                    f"Reports {ratio:.1f}x what stations + satellite imply ({L.inferred:.0f} kg/h): false or faulty readings")
             if L.inferred is not None and pen and not any("estimate" in r or "imply" in r for r in reasons):
                 reasons.append(f"Independent estimate: {L.inferred:.0f} kg/h SO₂")
             if self.iforest is not None:

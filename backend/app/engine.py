@@ -62,6 +62,7 @@ class Engine:
         self.prev_status = {}
         self.prev_school_level = {}
         self.prev_link_secure = {}
+        self.prev_exceeding = {}
         self.snapshot = None
         self.paused = False
         self.startup_seconds = round(time.time() - t0, 2)
@@ -74,6 +75,18 @@ class Engine:
             raise KeyError(behaviour)
         with self.lock:
             self.units[stack_id].behaviour = behaviour
+            self.world.dirty[stack_id] = behaviour != "honest"
+
+    def inject_reading(self, stack_id, so2, method, ticks=8):
+        if method not in ("analyser", "transit"):
+            raise KeyError(method)
+        with self.lock:
+            self.units[stack_id].inject(so2, method, ticks)
+            s = next(s for s in self.stacks if s.id == stack_id)
+            where = "fed into the analyser (validly signed)" if method == "analyser" else "rewritten in transit"
+            self._event("console", stack_id, "info",
+                        f"Demo: false SO₂ reading of {so2:g} kg/h {where} at {s.name} for {ticks} readings",
+                        self.world.t.isoformat())
 
     def set_smog(self, on):
         with self.lock:
@@ -143,6 +156,13 @@ class Engine:
                 elif prev in ("suspect", "compromised") and L.status == "trusted":
                     self._event("stack", s.id, "info", f"{s.name} data trusted again", t)
                 self.prev_status[s.id] = L.status
+                exceeding = stacks[-1]["exceeding_limit"]
+                if exceeding and not self.prev_exceeding.get(s.id) and L.status != "warming_up":
+                    src = "self-reported" if L.status == "trusted" else "independently estimated"
+                    self._event("violation", s.id, "high",
+                                f"{s.name} over its SO₂ limit: {stacks[-1]['best_estimate_so2']} kg/h "
+                                f"({src}) vs {s.so2_limit:g} kg/h allowed", t, notify=True)
+                self.prev_exceeding[s.id] = exceeding
 
             schools = []
             for sc in SCHOOLS:
@@ -188,4 +208,4 @@ class Engine:
 
     def meta(self):
         return {"behaviours": BEHAVIOURS, "qkd": self.qkd.summary(), "aws": self.aws.status,
-                "tick_seconds": self.tick_seconds, "startup_seconds": self.startup_seconds}
+                "tick_seconds": self.tick_seconds, "inject_ticks": 8, "startup_seconds": self.startup_seconds}

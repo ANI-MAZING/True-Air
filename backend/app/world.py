@@ -11,6 +11,7 @@ import numpy as np
 
 from . import dispersion
 from .geo import STACKS, STATIONS, grid_cells
+from .sensors import DIRTY_FACTOR
 
 IST = timezone(timedelta(hours=5, minutes=30))
 TICK_MINUTES = 15
@@ -28,6 +29,7 @@ class World:
         self.wind_from = 305.0   # NW, typical post-monsoon Delhi
         self.wind_speed = 2.5
         self.smog = False
+        self.dirty = {s.id: s.behaviour != "honest" for s in stacks}
 
     @property
     def hour(self):
@@ -57,7 +59,7 @@ class World:
         true = {}
         for s in self.stacks:
             load = self._load(s)
-            f = load * self.rng.gauss(1.0, 0.04)
+            f = load * self.rng.gauss(1.0, 0.04) * (DIRTY_FACTOR if self.dirty[s.id] else 1.0)
             true[s.id] = {"load": load, "so2": s.base_so2 * f, "nox": s.base_nox * f, "pm": s.base_pm * f}
 
         night = self.hour < 7 or self.hour >= 19
@@ -65,8 +67,8 @@ class World:
         W = dispersion.influence_matrix(self.stacks, self.station_ll, self.wind_from, self.wind_speed) * mixing
         e = lambda p: np.array([true[s.id][p] for s in self.stacks])
 
-        bg_pm = (85 if not night else 120) * (1.8 if self.smog else 1.0)
-        bg_so2, bg_no2 = 9.0, (38.0 if not night else 52.0)
+        bg_pm = (30 if not night else 42) * (4.0 if self.smog else 1.0)
+        bg_so2, bg_no2 = 6.0, (22.0 if not night else 30.0)
         n_st = len(self.station_ll)
 
         def obs(bg, contrib, rel=0.05, abs_=1.0):
@@ -77,7 +79,7 @@ class World:
         so2 = obs(bg_so2, W @ e("so2"))
         no2 = obs(bg_no2, 0.5 * (W @ e("nox")))
         pm25 = obs(bg_pm, 0.6 * (W @ e("pm")), rel=0.06, abs_=3)
-        pm10 = pm25 * 1.7 + 20
+        pm10 = pm25 * 1.5 + 10
 
         S = dispersion.influence_matrix(self.stacks, self.cells, self.wind_from, self.wind_speed, kind="sat")
         sat_bg = 40.0
