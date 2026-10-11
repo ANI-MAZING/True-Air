@@ -1,0 +1,7 @@
+fastapi>=0.110
+uvicorn[standard]>=0.29
+numpy>=1.26
+scipy>=1.11
+scikit-learn>=1.4
+cryptography>=42
+boto3>=1.34

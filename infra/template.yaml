@@ -1,0 +1,115 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: TrueAir - emissions integrity console (App Runner + DynamoDB + SNS)
+
+Parameters:
+  ImageUri:
+    Type: String
+    Description: ECR image URI, e.g. 123456789012.dkr.ecr.ap-south-1.amazonaws.com/trueair:latest
+  AlertEmail:
+    Type: String
+    Default: ""
+    Description: Optional email to subscribe to school / regulator alerts
+
+Conditions:
+  HasEmail: !Not [!Equals [!Ref AlertEmail, ""]]
+
+Resources:
+  EventsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: pk, AttributeType: S }
+        - { AttributeName: sk, AttributeType: S }
+      KeySchema:
+        - { AttributeName: pk, KeyType: HASH }
+        - { AttributeName: sk, KeyType: RANGE }
+
+  AlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: TrueAir alerts
+
+  AlertEmailSub:
+    Type: AWS::SNS::Subscription
+    Condition: HasEmail
+    Properties:
+      TopicArn: !Ref AlertTopic
+      Protocol: email
+      Endpoint: !Ref AlertEmail
+
+  EcrAccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: build.apprunner.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSAppRunnerServicePolicyForECRAccess
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: tasks.apprunner.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: trueair-runtime
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: [dynamodb:PutItem, dynamodb:Query, dynamodb:GetItem]
+                Resource: !GetAtt EventsTable.Arn
+              - Effect: Allow
+                Action: sns:Publish
+                Resource: !Ref AlertTopic
+
+  Service:
+    Type: AWS::AppRunner::Service
+    Properties:
+      ServiceName: trueair
+      SourceConfiguration:
+        AuthenticationConfiguration:
+          AccessRoleArn: !GetAtt EcrAccessRole.Arn
+        AutoDeploymentsEnabled: false
+        ImageRepository:
+          ImageIdentifier: !Ref ImageUri
+          ImageRepositoryType: ECR
+          ImageConfiguration:
+            Port: "8080"
+            RuntimeEnvironmentVariables:
+              - { Name: TRUEAIR_TABLE, Value: !Ref EventsTable }
+              - { Name: TRUEAIR_TOPIC_ARN, Value: !Ref AlertTopic }
+              - { Name: TRUEAIR_TICK_SECONDS, Value: "2" }
+              - { Name: TRUEAIR_NOTIFY_MIN_SECONDS, Value: "1800" }
+      InstanceConfiguration:
+        Cpu: "1 vCPU"
+        Memory: "2 GB"
+        InstanceRoleArn: !GetAtt InstanceRole.Arn
+      HealthCheckConfiguration:
+        Protocol: HTTP
+        Path: /api/health
+      # The simulation lives in memory: keep exactly one instance.
+      AutoScalingConfigurationArn: !GetAtt SingleInstance.AutoScalingConfigurationArn
+
+  SingleInstance:
+    Type: AWS::AppRunner::AutoScalingConfiguration
+    Properties:
+      AutoScalingConfigurationName: trueair-single
+      MinSize: 1
+      MaxSize: 1
+
+Outputs:
+  Url:
+    Value: !Sub "https://${Service.ServiceUrl}"
+  Table:
+    Value: !Ref EventsTable
+  Topic:
+    Value: !Ref AlertTopic

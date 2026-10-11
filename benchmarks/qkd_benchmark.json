@@ -1,0 +1,26 @@
+{
+  "note": "2240 train / 960 test BB84 sessions, 8 classes, 15 epochs, simulated circuit",
+  "models": [
+    {
+      "name": "Random forest (classical)",
+      "accuracy": 1.0,
+      "train_seconds": 0.16437315940856934,
+      "infer_ms": 0.028717517852783203
+    },
+    {
+      "name": "Classical LSTM",
+      "accuracy": 0.99375,
+      "train_seconds": 0.32648706436157227,
+      "infer_ms": 0.0015509625275929768,
+      "params": 18184
+    },
+    {
+      "name": "Hybrid QLSTM (4-qubit VQC + LSTM)",
+      "accuracy": 0.978125,
+      "train_seconds": 2.2455899715423584,
+      "infer_ms": 0.0105115274588267,
+      "params": 5152,
+      "q_params_moved": 0.346515417098999
+    }
+  ]
+}

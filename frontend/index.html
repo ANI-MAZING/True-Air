@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TrueAir Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="mark" aria-hidden="true"></span>
+    <div>
+      <h1>TrueAir</h1>
+      <p class="sub">Emissions integrity console · Delhi NCR · <span class="sim">simulated data</span></p>
+    </div>
+  </div>
+
+  <div class="readouts">
+    <div class="readout" id="cityReadout">
+      <span class="lbl">City AQI</span>
+      <span class="val" id="cityAqi">–</span>
+      <span class="cat" id="cityCat">–</span>
+    </div>
+    <div class="readout">
+      <span class="lbl">Sim time (IST)</span>
+      <span class="val mono" id="simTime">–</span>
+      <span class="cat" id="dayNight">–</span>
+    </div>
+    <div class="readout">
+      <span class="lbl">Wind</span>
+      <span class="val mono"><span class="windArrow" id="windArrow">↓</span> <span id="windTxt">–</span></span>
+      <span class="cat" id="windFrom">–</span>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="toggle" id="btnSmog" aria-pressed="false" title="Stubble-smoke episode: raises regional PM2.5 background">Smog episode</button>
+    <button class="toggle" id="btnTruth" aria-pressed="false" title="Show the simulator's ground truth next to what the regulator sees">Show ground truth</button>
+    <button class="toggle" id="btnPause" aria-pressed="false">Pause</button>
+  </div>
+</header>
+
+<main class="grid">
+  <section class="panel mapPanel" aria-label="Map">
+    <div id="map"></div>
+    <div class="legend">
+      <span><i class="dot st"></i>Ambient station (AQI)</span>
+      <span><i class="sq trusted"></i>Stack: trusted</span>
+      <span><i class="sq suspect"></i>suspect</span>
+      <span><i class="sq compromised"></i>compromised</span>
+      <span><i class="tri"></i>School</span>
+      <label class="satToggle"><input type="checkbox" id="chkSat" checked> Satellite SO₂ column</label>
+    </div>
+  </section>
+
+  <section class="panel ledger" aria-labelledby="ledgerH">
+    <div class="panelHead">
+      <h2 id="ledgerH">Stack ledger</h2>
+      <span class="hint">Trust in each plant's self-reported SO₂</span>
+    </div>
+    <ol id="stackList" class="stackList"></ol>
+  </section>
+
+  <section class="panel detail" id="detail" aria-labelledby="detailH">
+    <div class="panelHead">
+      <h2 id="detailH">Select a stack</h2>
+      <span class="hint" id="detailSub">Reported vs. independently inferred SO₂ (kg/h)</span>
+    </div>
+    <div id="detailBody" class="detailBody">
+      <p class="empty">Click any stack on the map or in the ledger to see its evidence trail.</p>
+    </div>
+  </section>
+
+  <section class="panel schools" aria-labelledby="schoolsH">
+    <div class="panelHead">
+      <h2 id="schoolsH">School advisories</h2>
+      <span class="hint">Pushed via SNS when a school's level rises</span>
+    </div>
+    <ul id="schoolList" class="schoolList"></ul>
+  </section>
+
+  <section class="panel qkd" aria-labelledby="qkdH">
+    <div class="panelHead">
+      <h2 id="qkdH">Regulator backbone · QKD</h2>
+      <span class="hint" id="qkdModel">BB84 sessions classified each tick</span>
+    </div>
+    <div id="qkdList" class="qkdList"></div>
+    <div id="bench" class="bench"></div>
+  </section>
+
+  <section class="panel feed" aria-labelledby="feedH">
+    <div class="panelHead">
+      <h2 id="feedH">Event log</h2>
+      <span class="hint" id="awsStatus">–</span>
+    </div>
+    <ol id="eventList" class="eventList"></ol>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>
